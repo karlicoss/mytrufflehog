@@ -2,9 +2,15 @@
 import argparse
 from pathlib import Path
 import re
+import sys
 import json
 from subprocess import run, PIPE
-from typing import Optional
+from typing import Optional, Set
+
+
+from kython.klogging2 import LazyLogger
+
+logger = LazyLogger('mytrufflehog', level='info')
 
 
 Reason = str
@@ -32,6 +38,20 @@ def is_git_blob(string: str, json) -> Optional[Reason]:
     return None
 
 
+def print_report(jsons):
+    for j in jsons:
+        header = f'''
+Reason: {j['reason']}
+Date: {j['date']}
+Hash: {j['commitHash']}
+Filepath: {j['path']}
+Branch: {j['branch']}
+Commit: {j['commit']}
+'''
+        print('\033[32m' + header + '\033[0m')
+        print(j['printDiff']) # already coloured
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('repo', type=Path)
@@ -52,19 +72,35 @@ def main():
 
     # TODO logging
 
+    logged: Set[str] = set()
+    def log_once(s: str, reason: str):
+        if s in logged:
+            return
+        logged.add(s)
+        logger.info('skipping %s', s)
+        logger.debug('reason: %s', reason)
+
+    filtered_jsons = []
     # TODO get all git hashes?
     for j in jsons:
         strings = j['stringsFound']
-        for s in strings:
+        filtered_strings = []
+        for s in set(strings): # sometimes there are duplicates..
             isblob = is_git_blob(s, j)
             if isblob is None:
-                # TODO error
-                raise RuntimeError("error", s)
+                filtered_strings.append(s)
             else:
-                print(f"skipping {s}: {isblob}")
+                log_once(s, isblob)
 
-    res.check_returncode()
-    # TODO
+        if len(filtered_strings) > 0:
+            j['stringsFound'] = filtered_strings
+            filtered_jsons.append(j)
+
+    if len(filtered_jsons) == 0:
+        sys.exit(0)
+
+    print_report(filtered_jsons)
+    sys.exit(1)
 
 
 if __name__ == '__main__':
