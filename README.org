@@ -1,0 +1,8 @@
+Wrapper around [[https://github.com/dxa4481/truffleHog][truffleHog]], tool to detect secrets leakage into Git.
+
+The wrapper eliminates some false positives:
+
+- github blob refernces
+  e.g. this:
+  =https://github.com/oshev/colifer/blob/592cc6b4d1ac9005c52fccdfb4e207513812baaa/reportextenders/jawbone/jawbone_sleep.py=
+  is treated by trufflehog as a leaked secret because of high entropy SHA
