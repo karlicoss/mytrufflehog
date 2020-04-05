@@ -17,7 +17,15 @@ Reason = str
 
 # TODO ugh. need to test it properly...
 
-BLOB_RE = r'https?://github.com/\w+/\w+/blob/[0-9a-z]{40}(/[\w\.]+)*'
+BLOB_RE = r'https?://github.com     /\w+/\w+/blob/[0-9a-z]{40}(/[\w\.]+)*'
+GIST_RE = r'https?://gist.github.com/\w+/         [0-9a-z]{32}(/[\w\.]+)*'
+
+RES = [
+    re.compile(BLOB_RE, re.VERBOSE),
+    re.compile(GIST_RE, re.VERBOSE),
+]
+
+
 # eliminate false positives like this:
 # https://github.com/oshev/colifer/blob/592cc6b4d1ac9005c52fccdfb4e207513812baaa/reportextenders/jawbone/jawbone_sleep.py
 def is_git_blob(string: str, json) -> Optional[Reason]:
@@ -31,10 +39,11 @@ def is_git_blob(string: str, json) -> Optional[Reason]:
             raise RuntimeError("TODO handle multiple occurences later", line)
 
         # these define 'safe' regions
-        for m in re.finditer(BLOB_RE, line):
-            (fr, to) = m.span()
-            if fr <= occurence < to:
-                return f'Occuring in: {line}'
+        for RE in RES:
+            for m in re.finditer(RE, line):
+                (fr, to) = m.span()
+                if fr <= occurence < to:
+                    return f'Occuring in: {line}'
     return None
 
 
