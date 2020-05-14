@@ -17,13 +17,11 @@ Reason = str
 
 # TODO ugh. need to test it properly...
 
-BLOB_RE = r'https?://github.com     /\w+/\w+/blob/[0-9a-z]{40}(/[\w\.]+)*'
+BLOB_RE = r'https?://github.com     /\w+/\w+/blob/               [0-9a-z]{40}(/[\w\.]+)*'
+PULL_RE = r'https?://github.com     /\w+/\w+/pull/[0-9]+/commits/[0-9a-z]{40}'
 GIST_RE = r'https?://gist.github.com/\w+/         [0-9a-z]{32}(/[\w\.]+)*'
 
-RES = [
-    re.compile(BLOB_RE, re.VERBOSE),
-    re.compile(GIST_RE, re.VERBOSE),
-]
+RES = [re.compile(x, re.VERBOSE) for x in (BLOB_RE, PULL_RE, GIST_RE)]
 
 
 # eliminate false positives like this:
